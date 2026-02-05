@@ -1,39 +1,50 @@
 #!/usr/bin/env bash
 
-# sgd - 11/01/2018
-set -x
-
-# sgd - 09/25/2020
 ulimit -c 0
 
-# Clean the environment
 module purge
+module load openjdk
 
-# Set working directory to home directory
 cd "${HOME}"
 
-#
-# Launch Xfce Window Manager and Panel
-#
+###########################################################
+# Disable GVFS / Udisks noise
+###########################################################
+export GVFS_DISABLE_FUSE=1
+export GIO_USE_VFS=local
+export UDISKS_IGNORE=1
+
+###########################################################
+# Disable ALL XFCE desktop icons (kills loop mount icons)
+###########################################################
+xfconf-query -c xfdesktop -p /desktop-icons/style -n -t int -s 0
+
+###########################################################
+# XFCE Setup
+###########################################################
 (
-  export SEND_256_COLORS_TO_REMOTE=1
-  export XDG_CONFIG_HOME="<%= session.staged_root.join("config") %>"
-  export XDG_DATA_HOME="<%= session.staged_root.join("share") %>"
-  export XDG_CACHE_HOME="$(mktemp -d)"
-  set -x
-  xfwm4 --compositor=off --daemon --sm-client-disable
-  xsetroot -solid "#D3D3D3"
-  xfsettingsd --sm-client-disable
-  xfce4-panel --sm-client-disable
+  eval "$(dbus-launch --sh-syntax)"
+  export DBUS_SESSION_BUS_ADDRESS
+  
+  # Start the session first
+  xfce4-session &
+  
+  # Wait for the desktop manager to actually start
+  sleep 5
+  
+  # Now force the icons to hide while the session is live
+  xfconf-query -c xfdesktop -p /desktop-icons/file-icons/show-device -n -t bool -s false
+  xfconf-query -c xfdesktop -p /desktop-icons/file-icons/show-removable -n -t bool -s false
+  xfconf-query -c xfdesktop -p /desktop-icons/file-icons/show-trash -n -t bool -s false
+  
+  # Refresh xfdesktop to apply changes immediately
+  xfdesktop --reload
 ) &
-
-#
-# Start rstudio
-#
-
-# Load the required environment
+sleep 5
+###########################################################
+# Launch fastqc
+###########################################################
 module load fastqc/<%= context.version %>
 
-
-# Launch rstudio
+# Launch fastqc
 fastqc
