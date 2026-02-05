@@ -1,7 +1,7 @@
 ---
 name: FastQC
 category: Interactive Apps
-subcategory: Apps
+subcategory: Bioinformatics
 role: batch_connect
 description: |
   This app will launch [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) GUI
